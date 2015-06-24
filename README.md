@@ -29,8 +29,10 @@ Where `username` is a Twitter user (without the `@`).
 ## Todo's
 
 - [ ] Allow transfer of binary data
-- [x] Implement two-way handshake so that one side of the conversation
-  doesn't start sending before the other is listening
+- [ ] Allow transfer of data larger than 140 chars
+- [ ] Find solution to distributing Twitter API consumer key/secret
+- [x] ~~Implement two-way handshake so that one side of the conversation
+  doesn't start sending before the other is listening~~
 
 ## License
 
