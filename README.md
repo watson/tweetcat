@@ -26,13 +26,10 @@ tweetcat [username]
 
 Where `username` is a Twitter user (without the `@`).
 
-**Gotcha:** Currently both sender and receiver have to be running before
-you send any data!
-
 ## Todo's
 
 - [ ] Allow transfer of binary data
-- [ ] Implement two-way handshake so that one side of the conversation
+- [x] Implement two-way handshake so that one side of the conversation
   doesn't start sending before the other is listening
 
 ## License

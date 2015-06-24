@@ -6,10 +6,12 @@ var duplexify = require('duplexify')
 var Twit = require('twit')
 var debug = require('debug')('tweetcat')
 
-var handshakeTmpl = '@%s want to tweetcat?'
+var synTmpl = '@%s want to tweetcat?'
+var synAckTmpl = '@%s yes let\'s tweetcat!'
 
 module.exports = function (remote, opts) {
-  var incomingHandshake = new RegExp('^' + util.format(handshakeTmpl, opts.screen_name))
+  var incomingSyn = new RegExp('^' + util.format(synTmpl, opts.screen_name))
+  var incomingSynAck = new RegExp('^' + util.format(synAckTmpl, opts.screen_name))
   var incomingMention = new RegExp('^@' + opts.screen_name + ' ')
   var twit = new Twit({
     consumer_key: opts.consumerKey,
@@ -19,6 +21,9 @@ module.exports = function (remote, opts) {
   })
   var ws = through2()
   var rs = through2()
+  var buffer = []
+  var synSent = false
+  var connected = false
   var remoteId, lastMsgId
 
   getUserId(remote, function (err, id) {
@@ -29,30 +34,10 @@ module.exports = function (remote, opts) {
     debug('listening for tweets by %s', remote)
     twit
       .stream('statuses/filter', { follow: remoteId })
+      .on('connected', syn) // TODO: Sub-optimal: This event doesn't fire for about 10 sec even though there is a connection
       .on('tweet', ontweet)
 
-    ws.on('data', function (data) {
-      // TODO: What if a data isn't a complete line?
-      var data = data.toString().trim()
-      debug('received data on stream', data)
-
-      var msg = util.format('@%s %s', remote, data)
-      var send = function () {
-        // send encoded tweet from readable stream
-        sendTweet(msg, { in_reply_to_status_id: lastMsgId }, function (err) {
-          if (err) rs.destroy(err)
-        })
-      }
-
-      // TODO: What if a 2nd meesage comes in before the handshake have completed?
-      if (lastMsgId) return send()
-
-      handshake(function (err, id) {
-        if (err) return rs.destroy(err)
-        debug('handshake complete (id: %s, connected: true)', id)
-        send()
-      })
-    })
+    ws.on('data', ondata)
   })
 
   function getUserId (username, cb) {
@@ -64,16 +49,29 @@ module.exports = function (remote, opts) {
     })
   }
 
+  function ondata (data) {
+    // TODO: What if a data isn't a complete line?
+    var data = data.toString().trim()
+    debug('received data on stream', data)
+
+    // TODO: Implement back pressure
+    buffer.push(data)
+
+    if (!connected) return syn()
+
+    sendBuffer()
+  }
+
   function ontweet (tweet) {
-    debug('incoming tweet (id: %s, from: %s, connected: %s)', tweet.id_str, tweet.user.id_str, !!lastMsgId, tweet.text)
+    debug('incoming tweet (id: %s, from: %s, connected: %s)', tweet.id_str, tweet.user.id_str, connected, tweet.text)
 
     // ignore tweets not created by the remote user (e.g. replies to the user, retweets etc)
     if (tweet.user.id_str !== remoteId) {
-      debug('ignoring tweet not created by remote user (remote: %s, tweet: %s)', remoteId, tweet.user.id_str)
+      debug('ignoring tweet not created by remote user (remote: %s, tweeter: %s)', remoteId, tweet.user.id_str)
       return
     }
 
-    // debug('new tweet from %s (id: %s, connected: %s)', remote, tweet.id_str, !!lastMsgId, tweet.text)
+    // debug('new tweet from %s (id: %s, connected: %s)', remote, tweet.id_str, connected, tweet.text)
 
     // ignore all tweets not directed to the current user
     if (!incomingMention.test(tweet.text)) {
@@ -89,15 +87,26 @@ module.exports = function (remote, opts) {
       return
     }
 
-    if (incomingHandshake.test(tweet.text)) {
-      debug('detected incoming handshake (id: %s, connected: true)', tweet.id_str)
+    // The remote is trying to establish a connection
+    if (incomingSyn.test(tweet.text)) {
+      debug('detected incoming syn pkg (id: %s, connected: %s)', tweet.id_str, connected)
       lastMsgId = tweet.id_str
+      synAck()
+      return
+    }
+
+    // The remote is responding to a connection this client tried to establish
+    if (incomingSynAck.test(tweet.text)) {
+      debug('detected incoming syn-ack pkg (id: %s, connected: %s)', tweet.id_str, connected)
+      lastMsgId = tweet.id_str
+      connected = true
+      sendBuffer()
       return
     }
 
     // ignore every tweet until connected
-    if (!lastMsgId) {
-      debug('ignoring tweet - no handshake sent or received yet!')
+    if (!connected) {
+      debug('ignoring tweet - not yet connected!')
       return
     }
 
@@ -110,9 +119,37 @@ module.exports = function (remote, opts) {
     rs.write(msg + '\n') // write decoded message to writable stream
   }
 
-  function handshake (cb) {
-    debug('preparing handshake...')
-    sendTweet(util.format(handshakeTmpl, remote, Date.now()), cb)
+  function sendBuffer () {
+    // TODO: Handle raise condition
+    var data = buffer.shift()
+    if (!data) return
+    var msg = util.format('@%s %s', remote, data)
+    // send encoded tweet from readable stream
+    sendTweet(msg, { in_reply_to_status_id: lastMsgId }, function (err) {
+      if (err) return rs.destroy(err)
+      sendBuffer()
+    })
+  }
+
+  function syn () {
+    if (synSent) return
+    synSent = true
+    debug('preparing syn pkg...')
+    // TODO: What if a 2nd meesage comes in before the handshake have completed?
+    sendTweet(util.format(synTmpl, remote, Date.now()), function (err, id) {
+      if (err) return rs.destroy(err)
+      debug('syn pkg sent successfully (id: %s, connected: %s)', id, connected)
+    })
+  }
+
+  function synAck () {
+    debug('preparing syn-ack pkg...')
+    sendTweet(util.format(synAckTmpl, remote, Date.now()), function (err, id) {
+      if (err) return rs.destroy(err)
+      debug('syn-ack pkg sent successfully (id: %s, connected: %s)', id, connected)
+      connected = true
+      sendBuffer()
+    })
   }
 
   function sendTweet (msg, opts, cb) {
