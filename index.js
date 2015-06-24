@@ -50,7 +50,6 @@ module.exports = function (remote, opts) {
   }
 
   function ondata (data) {
-    // TODO: What if a data isn't a complete line?
     var data = data.toString().trim()
     debug('received data on stream', data)
 
@@ -135,7 +134,6 @@ module.exports = function (remote, opts) {
     if (synSent) return
     synSent = true
     debug('preparing syn pkg...')
-    // TODO: What if a 2nd meesage comes in before the handshake have completed?
     sendTweet(util.format(synTmpl, remote, Date.now()), function (err, id) {
       if (err) return rs.destroy(err)
       debug('syn pkg sent successfully (id: %s, connected: %s)', id, connected)
