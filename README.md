@@ -7,7 +7,7 @@ p2p pipe across the internet using Twitter as a transport stream.
 ## Installation
 
 ```
-npm install -g watson/tweetcat
+npm install -g tweetcat
 ```
 
 ## Usage
