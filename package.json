@@ -1,0 +1,45 @@
+{
+  "name": "tweetcat",
+  "version": "0.0.0",
+  "description": "p2p pipe across the internet using Twitter as a transport stream",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "tweetcat": "bin.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/watson/tweetcat.git"
+  },
+  "bugs": {
+    "url": "https://github.com/watson/tweetcat/issues"
+  },
+  "homepage": "https://github.com/watson/tweetcat",
+  "keywords": [
+    "twitter",
+    "tweet",
+    "cat",
+    "pipe",
+    "unix",
+    "transport",
+    "stream",
+    "streams"
+  ],
+  "author": "Thomas Watson Steen <w@tson.dk> (https://twitter.com/wa7son)",
+  "license": "MIT",
+  "dependencies": {
+    "debug": "^2.2.0",
+    "duplexify": "^3.4.2",
+    "mkdirp": "^0.5.1",
+    "opn": "git://github.com/watson/opn.git#no-wait",
+    "read": "^1.0.6",
+    "through2": "^2.0.0",
+    "twit": "^1.1.20",
+    "twitter-pin": "^1.0.0",
+    "user-home": "^2.0.0"
+  },
+  "devDependencies": {},
+  "preferGlobal": true
+}
