@@ -21,7 +21,7 @@ module.exports = function (remote, opts) {
   })
   var ws = through2()
   var rs = through2()
-  var buffer = []
+  var queue = []
   var synSent = false
   var connected = false
   var remoteId, lastMsgId
@@ -54,11 +54,11 @@ module.exports = function (remote, opts) {
     debug('received data on stream', data)
 
     // TODO: Implement back pressure
-    buffer.push(data)
+    queue.push(data)
 
     if (!connected) return syn()
 
-    sendBuffer()
+    sendQueue()
   }
 
   function ontweet (tweet) {
@@ -92,7 +92,7 @@ module.exports = function (remote, opts) {
       debug('detected incoming syn-ack pkg (id: %s, connected: %s)', tweet.id_str, connected)
       lastMsgId = tweet.id_str
       connected = true
-      sendBuffer()
+      sendQueue()
       return
     }
 
@@ -109,15 +109,15 @@ module.exports = function (remote, opts) {
     rs.write(msg + '\n') // write decoded message to writable stream
   }
 
-  function sendBuffer () {
+  function sendQueue () {
     // TODO: Handle raise condition
-    var data = buffer.shift()
+    var data = queue.shift()
     if (!data) return
     var msg = util.format('@%s %s', remote, data)
     // send encoded tweet from readable stream
     sendTweet(msg, { in_reply_to_status_id: lastMsgId }, function (err) {
       if (err) return rs.destroy(err)
-      sendBuffer()
+      sendQueue()
     })
   }
 
@@ -137,7 +137,7 @@ module.exports = function (remote, opts) {
       if (err) return rs.destroy(err)
       debug('syn-ack pkg sent successfully (id: %s, connected: %s)', id, connected)
       connected = true
-      sendBuffer()
+      sendQueue()
     })
   }
 
