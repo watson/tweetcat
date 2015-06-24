@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 'use strict'
 
-// TODO: What to do with these?
-var consumerKey = 'JyquwWU20k5R9OnGxqVQ22WpZ'
-var consumerSecret = '2lsWPGMjlkjRrH76e3dJdzNsxdxRHldY6XqnnXcNqhpE6mvEXR'
+// Please don't misuse these - I would like to keep this module easy to use
+// without requireing people to first create their own app om Twitter
+var consumerKey = 'XncZh9GMO7nUOCtoNeD7HXRu8'
+var consumerSecret = 'NTshMOR9ew0iLTSfnFcYhJxp9XOkilWRSnMVt9vmaDqmcRK3pY'
 
 var fs = require('fs')
 var path = require('path')
