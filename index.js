@@ -62,15 +62,8 @@ module.exports = function (remote, opts) {
   }
 
   function ontweet (tweet) {
-    debug('incoming tweet (id: %s, from: %s, connected: %s)', tweet.id_str, tweet.user.id_str, connected, tweet.text)
-
     // ignore tweets not created by the remote user (e.g. replies to the user, retweets etc)
-    if (tweet.user.id_str !== remoteId) {
-      debug('ignoring tweet not created by remote user (remote: %s, tweeter: %s)', remoteId, tweet.user.id_str)
-      return
-    }
-
-    // debug('new tweet from %s (id: %s, connected: %s)', remote, tweet.id_str, connected, tweet.text)
+    if (tweet.user.id_str !== remoteId) return
 
     // ignore all tweets not directed to the current user
     if (!incomingMention.test(tweet.text)) {
@@ -82,7 +75,7 @@ module.exports = function (remote, opts) {
       // @-mention to insure the reply to his own message wasn't to a totally
       // differnt user - so it's easier to just not care about
       // `tweet.in_reply_to_user_id_str` and ONLY care about the @-mention.
-      debug('ignoring tweet in reply to %s (id: %s)', tweet.in_reply_to_user_id_str, tweet.id_str)
+      debug('ignoring non-reply tweet (id: %s, reply-to: %s, connected: %s)', tweet.id_str, tweet.in_reply_to_user_id_str, connected)
       return
     }
 
@@ -103,16 +96,14 @@ module.exports = function (remote, opts) {
       return
     }
 
-    // ignore every tweet until connected
-    if (!connected) {
-      debug('ignoring tweet - not yet connected!')
-      return
-    }
+    debug('new tweet by %s (id: %s, connected: %s)', remote, tweet.id_str, connected, tweet.text)
+
+    if (!connected) return debug('ignoring tweet - not yet connected!')
 
     lastMsgId = tweet.id_str
     var msg = tweet.text.replace(incomingMention, '')
 
-    debug('received incoming message (id: %s)', tweet.id_str, msg)
+    debug('relaying message (id: %s)', tweet.id_str, msg)
 
     // TODO: Handle back pressure
     rs.write(msg + '\n') // write decoded message to writable stream
