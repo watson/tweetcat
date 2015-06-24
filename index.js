@@ -106,7 +106,7 @@ module.exports = function (remote, opts) {
 
     debug('received incoming message (id: %s)', tweet.id_str, msg)
 
-    // TODO: Handle backpressure
+    // TODO: Handle back pressure
     rs.write(msg + '\n') // write decoded message to writable stream
   }
 
@@ -121,7 +121,7 @@ module.exports = function (remote, opts) {
       opts = {}
     }
     opts.status = msg
-    debug('tweeting...', opts)
+    debug('tweeting', opts)
     twit.post('statuses/update', opts, function (err, data, res) {
       if (err) return cb(err)
       debug('tweet sent successfully (id: %s)', data.id_str)
