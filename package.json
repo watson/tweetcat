@@ -1,6 +1,6 @@
 {
   "name": "tweetcat",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "p2p pipe across the internet using Twitter as a transport stream",
   "main": "index.js",
   "scripts": {
@@ -41,5 +41,9 @@
     "user-home": "^2.0.0"
   },
   "devDependencies": {},
-  "preferGlobal": true
+  "preferGlobal": true,
+  "coordinates": [
+    18.4786257,
+    -69.9548902
+  ]
 }
