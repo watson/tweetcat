@@ -28,6 +28,7 @@ Where `username` is a Twitter user (without the `@`).
 
 ## Todo's
 
+- [ ] Add tests
 - [x] ~~Allow transfer of binary data~~
 - [x] ~~Allow transfer of data larger than 140 chars~~
 - [x] ~~Find solution to distributing Twitter API consumer key/secret~~
