@@ -49,12 +49,11 @@ module.exports = function (remote, opts) {
     })
   }
 
-  function ondata (data) {
-    var data = data.toString().trim()
-    debug('received data on stream', data)
+  function ondata (buf) {
+    debug('received data on stream', buf)
 
     // TODO: Implement back pressure
-    queue.push(data)
+    addToQueue(buf)
 
     if (!connected) return syn()
 
@@ -102,11 +101,17 @@ module.exports = function (remote, opts) {
 
     lastMsgId = tweet.id_str
     var msg = tweet.text.replace(incomingMention, '')
+    msg = new Buffer(msg, 'base64').toString('utf8')
 
     debug('relaying message (id: %s)', tweet.id_str, msg)
 
     // TODO: Handle back pressure
-    rs.write(msg + '\n') // write decoded message to writable stream
+    rs.write(msg) // write decoded message to writable stream
+  }
+
+  function addToQueue (buf) {
+    var encoded = buf.toString('base64')
+    queue.push(encoded)
   }
 
   function sendQueue () {
