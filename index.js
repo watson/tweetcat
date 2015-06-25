@@ -22,7 +22,6 @@ module.exports = function (remote, opts) {
   var proxy = duplexify()
   var ws = through2()
   var rs = through2()
-  var queue = []
   var maxChunkSize = 140 - opts.screen_name.length - 2
   var synSent = false
   var remoteId, lastTweetId
