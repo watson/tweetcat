@@ -22,7 +22,6 @@ module.exports = function (remote, opts) {
   var proxy = duplexify()
   var rs = through2()
   var maxChunkSize = 140 - opts.screen_name.length - 2
-  var synSent = false
   var remoteId, lastTweetId
 
   proxy.setReadable(rs)
@@ -35,7 +34,7 @@ module.exports = function (remote, opts) {
     debug('listening for tweets by %s', remote)
     twit
       .stream('statuses/filter', { follow: remoteId })
-      .on('connected', syn) // TODO: Sub-optimal: This event doesn't fire for about 10 sec even though there is a connection
+      .once('connected', syn) // TODO: Sub-optimal: Doesn't fire right away when the connection is acually established (+10 sec delay) but then continues to fire over and over
       .on('tweet', ontweet)
   })
 
@@ -127,8 +126,6 @@ module.exports = function (remote, opts) {
   }
 
   function syn () {
-    if (synSent) return
-    synSent = true
     debug('preparing syn pkg...')
     var tweet = util.format(synTmpl, remote, Date.now())
     sendTweet(tweet, function (err, id) {
