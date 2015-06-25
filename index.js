@@ -20,7 +20,6 @@ module.exports = function (remote, opts) {
     access_token_secret: opts.secret
   })
   var proxy = duplexify()
-  var ws = through2()
   var rs = through2()
   var maxChunkSize = 140 - opts.screen_name.length - 2
   var synSent = false
@@ -99,14 +98,13 @@ module.exports = function (remote, opts) {
   function setWritable () {
     if (proxy._writable) return // no need to do this more than once
     debug('connected')
-    ws.pipe(through2(function (chunk, encoding, cb) {
+    proxy.setWritable(through2(function (chunk, encoding, cb) {
       debug('received data on stream', chunk)
       sendData(chunk, function (err) {
         if (err) rs.destroy(err)
         cb()
       })
     }))
-    proxy.setWritable(ws)
   }
 
   function sendData (buf, cb) {
