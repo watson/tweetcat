@@ -44,7 +44,7 @@ module.exports = function (remote, opts) {
     debug('requesting user id for %s', username)
     twit.get('users/show', { screen_name: username }, function (err, data, res) {
       if (err) return cb(err)
-      debug('got user id %s for username %s', data.id_str, username)
+      debug('got user id %s for %s', data.id_str, username)
       cb(null, data.id_str)
     })
   }
@@ -75,13 +75,13 @@ module.exports = function (remote, opts) {
       // @-mention to insure the reply to his own message wasn't to a totally
       // differnt user - so it's easier to just not care about
       // `tweet.in_reply_to_user_id_str` and ONLY care about the @-mention.
-      debug('ignoring non-reply tweet (id: %s, reply-to: %s, connected: %s)', tweet.id_str, tweet.in_reply_to_user_id_str, connected)
+      debug('ignoring non-reply tweet (id: %s, reply-to: %s)', tweet.id_str, tweet.in_reply_to_user_id_str)
       return
     }
 
     // The remote is trying to establish a connection
     if (incomingSyn.test(tweet.text)) {
-      debug('detected incoming syn pkg (id: %s, connected: %s)', tweet.id_str, connected)
+      debug('detected incoming syn pkg (id: %s)', tweet.id_str)
       lastMsgId = tweet.id_str
       synAck()
       return
@@ -89,14 +89,14 @@ module.exports = function (remote, opts) {
 
     // The remote is responding to a connection this client tried to establish
     if (incomingSynAck.test(tweet.text)) {
-      debug('detected incoming syn-ack pkg (id: %s, connected: %s)', tweet.id_str, connected)
+      debug('detected incoming syn-ack pkg (id: %s)', tweet.id_str)
       lastMsgId = tweet.id_str
       connected = true
       sendQueue()
       return
     }
 
-    debug('new tweet by %s (id: %s, connected: %s)', remote, tweet.id_str, connected, tweet.text)
+    debug('new tweet by %s (id: %s)', remote, tweet.id_str, tweet.text)
 
     if (!connected) return debug('ignoring tweet - not yet connected!')
 
@@ -127,7 +127,7 @@ module.exports = function (remote, opts) {
     debug('preparing syn pkg...')
     sendTweet(util.format(synTmpl, remote, Date.now()), function (err, id) {
       if (err) return rs.destroy(err)
-      debug('syn pkg sent successfully (id: %s, connected: %s)', id, connected)
+      debug('syn pkg sent successfully (id: %s)', id)
     })
   }
 
@@ -135,7 +135,7 @@ module.exports = function (remote, opts) {
     debug('preparing syn-ack pkg...')
     sendTweet(util.format(synAckTmpl, remote, Date.now()), function (err, id) {
       if (err) return rs.destroy(err)
-      debug('syn-ack pkg sent successfully (id: %s, connected: %s)', id, connected)
+      debug('syn-ack pkg sent successfully (id: %s)', id)
       connected = true
       sendQueue()
     })
