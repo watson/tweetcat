@@ -25,7 +25,7 @@ module.exports = function (remote, opts) {
   var maxChunkSize = 140 - opts.screen_name.length - 2
   var synSent = false
   var connected = false
-  var remoteId, lastMsgId
+  var remoteId, lastTweetId
 
   getUserId(remote, function (err, id) {
     if (err) return rs.destroy(err)
@@ -82,7 +82,7 @@ module.exports = function (remote, opts) {
     // The remote is trying to establish a connection
     if (incomingSyn.test(tweet.text)) {
       debug('detected incoming syn pkg (id: %s)', tweet.id_str)
-      lastMsgId = tweet.id_str
+      lastTweetId = tweet.id_str
       synAck()
       return
     }
@@ -90,7 +90,7 @@ module.exports = function (remote, opts) {
     // The remote is responding to a connection this client tried to establish
     if (incomingSynAck.test(tweet.text)) {
       debug('detected incoming syn-ack pkg (id: %s)', tweet.id_str)
-      lastMsgId = tweet.id_str
+      lastTweetId = tweet.id_str
       connected = true
       sendQueue()
       return
@@ -100,7 +100,7 @@ module.exports = function (remote, opts) {
 
     if (!connected) return debug('ignoring tweet - not yet connected!')
 
-    lastMsgId = tweet.id_str
+    lastTweetId = tweet.id_str
     var msg = tweet.text.replace(incomingMention, '')
     msg = new Buffer(msg, 'base64').toString('utf8')
 
@@ -128,7 +128,7 @@ module.exports = function (remote, opts) {
     if (!data) return
     var msg = util.format('@%s %s', remote, data)
     // send encoded tweet from readable stream
-    sendTweet(msg, { in_reply_to_status_id: lastMsgId }, function (err) {
+    sendTweet(msg, { in_reply_to_status_id: lastTweetId }, function (err) {
       if (err) return rs.destroy(err)
       sendQueue()
     })
@@ -164,7 +164,7 @@ module.exports = function (remote, opts) {
     twit.post('statuses/update', opts, function (err, data, res) {
       if (err) return cb(err)
       debug('tweet sent successfully (id: %s)', data.id_str)
-      lastMsgId = data.id_str
+      lastTweetId = data.id_str
       cb(null, data.id_str)
     })
   }
