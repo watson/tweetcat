@@ -101,13 +101,12 @@ module.exports = function (remote, opts) {
     if (!connected) return debug('ignoring tweet - not yet connected!')
 
     lastTweetId = tweet.id_str
-    var msg = tweet.text.replace(incomingMention, '')
-    msg = new Buffer(msg, 'base64').toString('utf8')
+    var data = tweet.text.replace(incomingMention, '')
+    data = new Buffer(data, 'base64').toString('utf8')
 
-    debug('relaying message (id: %s)', tweet.id_str, msg)
+    debug('relaying data (id: %s)', tweet.id_str, data)
 
-    // TODO: Handle back pressure
-    rs.write(msg) // write decoded message to writable stream
+    rs.write(data) // TODO: Handle back pressure
   }
 
   function addToQueue (buf) {
