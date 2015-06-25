@@ -36,6 +36,12 @@ module.exports = function (remote, opts) {
       .stream('statuses/filter', { follow: remoteId })
       .once('connected', syn) // TODO: Sub-optimal: Doesn't fire right away when the connection is acually established (+10 sec delay) but then continues to fire over and over
       .on('tweet', ontweet)
+
+    // Speed things up: Start 2-way handshake even though we are not yet done
+    // setting up the `statuses/filter` stream. This might result in a syn-ack
+    // being sent back to us before we are ready, but then the `connected`
+    // event above will fire and re-initialize the handshake
+    syn()
   })
 
   function getUserId (username, cb) {
@@ -126,6 +132,7 @@ module.exports = function (remote, opts) {
   }
 
   function syn () {
+    if (proxy._writable) return // connection already established
     debug('preparing syn pkg...')
     var tweet = util.format(synTmpl, remote, Date.now())
     sendTweet(tweet, function (err, id) {
