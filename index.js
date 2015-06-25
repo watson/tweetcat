@@ -22,7 +22,7 @@ module.exports = function (remote, opts) {
   var ws = through2()
   var rs = through2()
   var queue = []
-  var maxDataLength = 140 - opts.screen_name.length - 2
+  var maxChunkSize = 140 - opts.screen_name.length - 2
   var synSent = false
   var connected = false
   var remoteId, lastMsgId
@@ -113,7 +113,7 @@ module.exports = function (remote, opts) {
   function addToQueue (buf) {
     var rest = new Buffer('')
     var encoded = buf.toString('base64')
-    while (encoded.length > maxDataLength) {
+    while (encoded.length > maxChunkSize) {
       rest = Buffer.concat([buf.slice(-1), rest])
       buf = buf.slice(0, -1)
       encoded = buf.toString('base64')
