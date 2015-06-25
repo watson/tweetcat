@@ -19,13 +19,15 @@ module.exports = function (remote, opts) {
     access_token: opts.token,
     access_token_secret: opts.secret
   })
+  var proxy = duplexify()
   var ws = through2()
   var rs = through2()
   var queue = []
   var maxChunkSize = 140 - opts.screen_name.length - 2
   var synSent = false
-  var connected = false
   var remoteId, lastTweetId
+
+  proxy.setReadable(rs)
 
   getUserId(remote, function (err, id) {
     if (err) return rs.destroy(err)
@@ -37,8 +39,6 @@ module.exports = function (remote, opts) {
       .stream('statuses/filter', { follow: remoteId })
       .on('connected', syn) // TODO: Sub-optimal: This event doesn't fire for about 10 sec even though there is a connection
       .on('tweet', ontweet)
-
-    ws.on('data', ondata)
   })
 
   function getUserId (username, cb) {
@@ -48,17 +48,6 @@ module.exports = function (remote, opts) {
       debug('got user id %s for %s', data.id_str, username)
       cb(null, data.id_str)
     })
-  }
-
-  function ondata (buf) {
-    debug('received data on stream', buf)
-
-    // TODO: Implement back pressure
-    addToQueue(buf)
-
-    if (!connected) return syn()
-
-    sendQueue()
   }
 
   function ontweet (tweet) {
@@ -91,14 +80,13 @@ module.exports = function (remote, opts) {
     if (incomingSynAck.test(tweet.text)) {
       debug('detected incoming syn-ack pkg (id: %s)', tweet.id_str)
       lastTweetId = tweet.id_str
-      connected = true
-      sendQueue()
+      setWritable()
       return
     }
 
     debug('new tweet by %s (id: %s)', remote, tweet.id_str, tweet.text)
 
-    if (!connected) return debug('ignoring tweet - not yet connected!')
+    if (!proxy._writable) return debug('ignoring tweet - not yet connected!')
 
     lastTweetId = tweet.id_str
     var data = tweet.text.replace(incomingMention, '')
@@ -109,27 +97,32 @@ module.exports = function (remote, opts) {
     rs.write(data) // TODO: Handle back pressure
   }
 
-  function addToQueue (buf) {
+  function setWritable () {
+    if (proxy._writable) return // no need to do this more than once
+    debug('connected')
+    ws.pipe(through2(function (chunk, encoding, cb) {
+      debug('received data on stream', chunk)
+      sendData(chunk, cb)
+    }))
+    proxy.setWritable(ws)
+  }
+
+  function sendData (buf, cb) {
     var rest = new Buffer('')
     var encoded = buf.toString('base64')
+
     while (encoded.length > maxChunkSize) {
       rest = Buffer.concat([buf.slice(-1), rest])
       buf = buf.slice(0, -1)
       encoded = buf.toString('base64')
     }
-    queue.push(encoded)
-    if (rest.length) addToQueue(rest)
-  }
 
-  function sendQueue () {
-    // TODO: Handle raise condition
-    var data = queue.shift()
-    if (!data) return
-    var msg = util.format('@%s %s', remote, data)
-    // send encoded tweet from readable stream
-    sendTweet(msg, { in_reply_to_status_id: lastTweetId }, function (err) {
-      if (err) return rs.destroy(err)
-      sendQueue()
+    var tweet = util.format('@%s %s', remote, encoded)
+
+    sendTweet(tweet, { in_reply_to_status_id: lastTweetId }, function (err) {
+      if (err) return cb(err)
+      if (rest.length) return sendData(rest, cb)
+      cb()
     })
   }
 
@@ -148,8 +141,7 @@ module.exports = function (remote, opts) {
     sendTweet(util.format(synAckTmpl, remote, Date.now()), function (err, id) {
       if (err) return rs.destroy(err)
       debug('syn-ack pkg sent successfully (id: %s)', id)
-      connected = true
-      sendQueue()
+      setWritable()
     })
   }
 
@@ -168,5 +160,5 @@ module.exports = function (remote, opts) {
     })
   }
 
-  return duplexify(ws, rs)
+  return proxy
 }
