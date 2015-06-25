@@ -101,7 +101,10 @@ module.exports = function (remote, opts) {
     debug('connected')
     ws.pipe(through2(function (chunk, encoding, cb) {
       debug('received data on stream', chunk)
-      sendData(chunk, cb)
+      sendData(chunk, function (err) {
+        if (err) rs.destroy(err)
+        cb()
+      })
     }))
     proxy.setWritable(ws)
   }
