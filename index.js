@@ -132,7 +132,8 @@ module.exports = function (remote, opts) {
 
   function syn () {
     debug('preparing syn pkg...')
-    var tweet = util.format(synTmpl, remote, Date.now())
+    var uniqueness = base64Emoji.encode(Date.now().toString()).toString()
+    var tweet = util.format(synTmpl, remote, uniqueness)
     sendTweet(tweet, function (err, id) {
       if (err) return rs.destroy(err)
       debug('syn pkg sent successfully (id: %s)', id)
@@ -141,7 +142,8 @@ module.exports = function (remote, opts) {
 
   function synAck () {
     debug('preparing syn-ack pkg...')
-    var tweet = util.format(synAckTmpl, remote, Date.now())
+    var uniqueness = base64Emoji.encode(Date.now().toString()).toString()
+    var tweet = util.format(synAckTmpl, remote, uniqueness)
     sendTweet(tweet, { in_reply_to_user_id_str: lastTweetId }, function (err, id) {
       if (err) return rs.destroy(err)
       debug('syn-ack pkg sent successfully (id: %s)', id)
