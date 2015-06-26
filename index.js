@@ -3,6 +3,7 @@
 var util = require('util')
 var through2 = require('through2')
 var duplexify = require('duplexify')
+var base64Emoji = require('base64-emoji')
 var Twit = require('twit')
 var debug = require('debug')('tweetcat')
 
@@ -91,7 +92,7 @@ module.exports = function (remote, opts) {
 
     lastTweetId = tweet.id_str
     var data = tweet.text.replace(incomingMention, '')
-    data = new Buffer(data, 'base64').toString('utf8')
+    data = base64Emoji.decode(data)
 
     debug('relaying data (id: %s)', tweet.id_str, data)
 
@@ -112,12 +113,12 @@ module.exports = function (remote, opts) {
 
   function sendData (buf, cb) {
     var rest = new Buffer('')
-    var encoded = buf.toString('base64')
+    var encoded = base64Emoji.encode(buf)
 
     while (encoded.length > maxChunkSize) {
       rest = Buffer.concat([buf.slice(-1), rest])
       buf = buf.slice(0, -1)
-      encoded = buf.toString('base64')
+      encoded = base64Emoji.encode(buf)
     }
 
     var tweet = util.format('@%s %s', remote, encoded)
