@@ -30,7 +30,7 @@
   "author": "Thomas Watson Steen <w@tson.dk> (https://twitter.com/wa7son)",
   "license": "MIT",
   "dependencies": {
-    "base64-emoji": "^1.0.0",
+    "base64-emoji": "^2.0.2",
     "debug": "^2.2.0",
     "duplexify": "^3.4.2",
     "mkdirp": "^0.5.1",
