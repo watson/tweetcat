@@ -26,6 +26,18 @@ tweetcat [username]
 
 Where `username` is a Twitter user (without the `@`).
 
+## API
+
+```
+tweetcat [options] [username]
+```
+
+**Options:**
+
+- `--plain` - Send and receive data in plain text (boring!!)
+- `--conf` - Save/load configuration file to/from a specific location
+  (defaults to `~/.config/tweetcat.conf)
+
 ## Todo's
 
 - [ ] Add tests

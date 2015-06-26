@@ -92,7 +92,7 @@ module.exports = function (remote, opts) {
 
     lastTweetId = tweet.id_str
     var data = tweet.text.replace(incomingMention, '')
-    data = base64Emoji.decode(data)
+    data = opts.plain ? data.toString() + '\n' : base64Emoji.decode(data)
 
     debug('relaying data (id: %s)', tweet.id_str, data)
 
@@ -113,15 +113,15 @@ module.exports = function (remote, opts) {
 
   function sendData (buf, cb) {
     var rest = new Buffer('')
-    var encoded = base64Emoji.encode(buf)
+    var encoded = opts.plain ? buf : base64Emoji.encode(buf)
 
     while (encoded.length > maxChunkSize) {
       rest = Buffer.concat([buf.slice(-1), rest])
       buf = buf.slice(0, -1)
-      encoded = base64Emoji.encode(buf)
+      encoded = opts.plain ? buf : base64Emoji.encode(buf)
     }
 
-    var tweet = util.format('@%s %s', remote, encoded)
+    var tweet = util.format('@%s %s', remote, encoded.toString())
 
     sendTweet(tweet, { in_reply_to_status_id: lastTweetId }, function (err) {
       if (err) return cb(err)

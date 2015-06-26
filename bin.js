@@ -17,18 +17,21 @@ var twitterPin = require('twitter-pin')(consumerKey, consumerSecret)
 var debug = require('debug')('tweetcat')
 var tweetcat = require('./')
 
-var remote = process.argv[2]
-var confFile = path.join(process.cwd(), process.argv[3]) ||
+var argv = require('minimist')(process.argv.slice(2))
+
+var remote = argv._[0]
+var confFile = path.join(process.cwd(), argv.conf) ||
                path.join(userHome, '.config', 'tweetcat.json')
 
-if (!remote) return error('Usage: tweetcat [username]')
-if (remote === '--init') return init()
+if (argv.init) return init()
 if (!fs.existsSync(confFile)) return error('ERROR: tweetcat not initialized! Run `tweetcat --init`')
+if (!remote) return error('Usage: tweetcat [username]')
 
 debug('loading config file', confFile)
 var conf = require(confFile)
 conf.consumerKey = consumerKey
 conf.consumerSecret = consumerSecret
+conf.plain = argv.plain
 debug('loaded conf', conf)
 
 process.stdin.pipe(tweetcat(remote, conf)).pipe(process.stdout)

@@ -33,6 +33,7 @@
     "base64-emoji": "^2.0.2",
     "debug": "^2.2.0",
     "duplexify": "^3.4.2",
+    "minimist": "^1.1.1",
     "mkdirp": "^0.5.1",
     "opn": "git://github.com/watson/opn.git#no-wait",
     "read": "^1.0.6",
