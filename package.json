@@ -1,6 +1,6 @@
 {
   "name": "tweetcat",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "p2p pipe across the internet using Twitter as a transport stream",
   "main": "index.js",
   "scripts": {
