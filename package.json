@@ -34,7 +34,7 @@
     "debug": "^2.2.0",
     "duplexify": "^3.4.2",
     "mkdirp": "^0.5.1",
-    "opn": "git://github.com/watson/opn.git#no-wait",
+    "opn": "^3.0.0",
     "read": "^1.0.6",
     "through2": "^2.0.0",
     "twit": "^1.1.20",
