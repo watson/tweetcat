@@ -3,6 +3,7 @@
 var util = require('util')
 var through2 = require('through2')
 var duplexify = require('duplexify')
+var unicodeLength = require('unicode-length')
 var base64Emoji = require('base64-emoji')
 var Twit = require('twit')
 var debug = require('debug')('tweetcat')
@@ -22,7 +23,7 @@ module.exports = function (remote, opts) {
   })
   var proxy = duplexify()
   var rs = through2()
-  var maxChunkSize = 140 - opts.screen_name.length - 2
+  var maxTweetSize = 140 - opts.screen_name.length - 2
   var remoteId, lastTweetId
 
   proxy.setReadable(rs)
@@ -113,12 +114,12 @@ module.exports = function (remote, opts) {
 
   function sendData (buf, cb) {
     var rest = new Buffer('')
-    var encoded = base64Emoji.encode(buf)
+    var encoded = base64Emoji.encode(buf).toString()
 
-    while (encoded.length > maxChunkSize) {
+    while (unicodeLength.get(encoded) > maxTweetSize) {
       rest = Buffer.concat([buf.slice(-1), rest])
       buf = buf.slice(0, -1)
-      encoded = base64Emoji.encode(buf)
+      encoded = base64Emoji.encode(buf).toString()
     }
 
     var tweet = util.format('@%s %s', remote, encoded)

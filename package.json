@@ -39,6 +39,7 @@
     "through2": "^2.0.0",
     "twit": "^1.1.20",
     "twitter-pin": "^1.0.0",
+    "unicode-length": "^1.0.0",
     "user-home": "^2.0.0"
   },
   "devDependencies": {},
