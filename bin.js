@@ -1,11 +1,6 @@
 #!/usr/bin/env node
 'use strict'
 
-// Please don't misuse these - I would like to keep this module easy to use
-// without requireing people to first create their own app om Twitter
-var consumerKey = 'XncZh9GMO7nUOCtoNeD7HXRu8'
-var consumerSecret = 'NTshMOR9ew0iLTSfnFcYhJxp9XOkilWRSnMVt9vmaDqmcRK3pY'
-
 var fs = require('fs')
 var path = require('path')
 var util = require('util')
@@ -13,7 +8,7 @@ var mkdirp = require('mkdirp')
 var read = require('read')
 var userHome = require('user-home')
 var opn = require('opn')
-var twitterPin = require('twitter-pin')(consumerKey, consumerSecret)
+var TwitterPin = require('twitter-pin')
 var debug = require('debug')('tweetcat')
 var tweetcat = require('./')
 
@@ -28,18 +23,28 @@ if (!fs.existsSync(confFile)) return error('ERROR: tweetcat not initialized! Run
 
 debug('loading config file', confFile)
 var conf = require(confFile)
-conf.consumerKey = consumerKey
-conf.consumerSecret = consumerSecret
 debug('loaded conf', conf)
 
 process.stdin.pipe(tweetcat(remote, conf)).pipe(process.stdout)
 
 function init () {
-  authorize(function (err, conf) {
+  read({ prompt: 'Twitter Consumer Key:' }, function (err, key) {
     if (err) return error(err)
-    setConf(conf, function (err) {
+
+    read({ prompt: 'Twitter Consumer Secret:' }, function (err, secret) {
       if (err) return error(err)
-      console.log('tweetcat initialized - now run `tweetcat [username]`')
+
+      authorize(key, secret, function (err, conf) {
+        if (err) return error(err)
+
+        conf.consumerKey = key
+        conf.consumerSecret = secret
+
+        setConf(conf, function (err) {
+          if (err) return error(err)
+          console.log('tweetcat initialized - now run `tweetcat [username]`')
+        })
+      })
     })
   })
 }
@@ -52,8 +57,9 @@ function setConf (conf, cb) {
   })
 }
 
-function authorize (cb) {
+function authorize (key, secret, cb) {
   debug('requesting auth url from twitter...')
+  var twitterPin = TwitterPin(key, secret)
   twitterPin.getUrl(function (err, url) {
     if (err) return cb(err)
     debug('received auth url', url)
