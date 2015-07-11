@@ -21,7 +21,7 @@ var remote = process.argv[2]
 var confFile = path.join(process.cwd(), process.argv[3]) ||
                path.join(userHome, '.config', 'tweetcat.json')
 
-if (!remote) return error('Usage: tweetcat [username]')
+if (!remote) return error('Usage: tweetcat <username>')
 if (remote === '--init') return init()
 if (!fs.existsSync(confFile)) return error('ERROR: tweetcat not initialized! Run `tweetcat --init`')
 
